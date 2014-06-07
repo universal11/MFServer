@@ -1,0 +1,10 @@
+{
+	"name":"mighty-frighties-server",
+	"description":"Mighty Frighties game server",
+	"version":"1.0.0",
+	"true":true,
+	"dependencies":{
+		"socket.io":"latest",
+		"node-mysql":"latest"
+	}
+}
