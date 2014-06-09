@@ -5,6 +5,8 @@ var HOST = "localhost";
 var PORT = 1337;
 var mfServer = new MFServer();
 
+
+
 console.log("Connecting to DB...");
 
 var dbConnection = Mysql.createConnection({
@@ -16,31 +18,41 @@ var dbConnection = Mysql.createConnection({
 
 
 var Server = Net.createServer(function(socket){
-	mfServer.addClient(socket);
-	socket.write("Connected to " + HOST + ":" + PORT + "\r\n");
+	//socket.client_id = parseInt(socket.remoteAddress.replace(/./g, "")) + new Date().getTime();
+	//mfServer.addClient(socket.client_id, socket);
+	socket.write("Connected to " + socket.localAddress + ":" + socket.localPort + "\r\n");
 	socket.write("From " + socket.remoteAddress + ":" + socket.remotePort + "\r\n");
 	socket.on("data", function(data){
-		
 		data = data.toString();
-		console.log("Processing...");
-		console.log(data);
+		if(data != "\r\n" && data != ""){
+			var dataAsJsonString = data;
+			try{
+				data = JSON.parse(data);
+			}
+			catch(exception){
+				console.log("Request: " + dataAsJsonString);
+				console.log("Parse error: " + exception);
+				return 0;
+			}
+			console.log("Request: " + mfServer.getActionNameById(data.action) + dataAsJsonString);
+			switch(data.action){
+				case MFServer.ACTIONS.CREATE_PLAYER:
+					mfServer.createPlayer(data, dbConnection);
+					break;
+				case MFServer.ACTIONS.BROADCAST:
+					mfServer.broadcast(data);
+					break;
+				case MFServer.ACTIONS.QUIT:
+					socket.end(); 
+					break;
+				case MFServer.ACTIONS.AUTHENTICATE:
+					mfServer.authenticate(socket, data, dbConnection); 
+					break;
+				default:
+					break;
+			}
+		}
 
-		if(data.indexOf(MFServer.ACTIONS.CREATE_PLAYER) > -1){
-			data = data.replace(MFServer.ACTIONS.CREATE_PLAYER, "");
-			data = JSON.parse(data);
-			MFServer.createPlayer(data, dbConnection);
-		}
-		else if(data.indexOf(MFServer.ACTIONS.BROADCAST) > -1){
-			data = data.replace(MFServer.ACTIONS.BROADCAST, "");
-			//data = JSON.parse(data);
-			mfServer.broadcast(data);
-		}
-		if(data == MFServer.ACTIONS.QUIT){ 
-			socket.end(); 
-			return 0;
-		}
-
-		mfServer.process(data.toString(), dbConnection);
 	});
 
 	socket.on("end", function(){

@@ -8,20 +8,36 @@ function MFServer(){
 }
 
 MFServer.ACTIONS = {
-	CREATE_PLAYER : "create-player:",
-	BROADCAST : "broadcast:",
-	QUIT : "quit\r\n",
+	CREATE_PLAYER : 11111,
+	BROADCAST : 22222,
+	QUIT : 33333,
+	AUTHENTICATE : 44444
 }
 
-MFServer.prototype.addClient = function(client){
-	this.clients.push(client);
+MFServer.prototype.getActionNameById = function(actionId){
+	switch(actionId){
+		case MFServer.ACTIONS.CREATE_PLAYER:
+			return "Create Player";
+		case MFServer.ACTIONS.BROADCAST:
+			return "Broadcast";
+		case MFServer.ACTIONS.QUIT:
+			return "Quit";
+		case MFServer.ACTIONS.AUTHENTICATE:
+			return "Authenticate";
+		default:
+			return "Unknown";
+	}
 }
 
-MFServer.prototype.process = function(data, dbConnection){
-	
+MFServer.prototype.addClient = function(player_id, client){
+	this.clients[player_id] = client;
 }
 
-MFServer.createPlayer = function(data, dbConnection){
+MFServer.prototype.getClientByPlayerId = function(player_id){
+	return this.clients[player_id];
+}
+
+MFServer.prototype.createPlayer = function(data, dbConnection){
 	Player.create(data, dbConnection);
 }
 
@@ -35,9 +51,17 @@ MFServer.prototype.getPlayer = function(){
 
 }
 
+MFServer.prototype.authenticate = function(client, data, dbConnection){
+	Player.authenticate(client, data, dbConnection);
+}
+
+MFServer.prototype.createBattle = function(data, dbConnection){
+	Battle.create(data, dbConnection);
+}
+
 MFServer.prototype.broadcast = function(data){
 	this.clients.forEach(function(client){
-		client.write("Broadcast Message: " + data);
+		client.write("Received Message: " + data.message);
 	});
 }
 

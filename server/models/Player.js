@@ -1,31 +1,19 @@
 function Player(){
-	this.id = -1;
-	this.name = "";
-	this.emailAddress = "";
 }
 
-Player.prototype.init = function(id, name, emailAddress){
-	this.id = id;
-	this.name = name;
-	this.emailAddress = emailAddress;
-}
-
-Player.prototype.initFromResult = function(result){
-
-}
-
-Player.prototype.getName = function(){
-	return this.name;
-}
-
-Player.prototype.getEmailAddress = function(){
-	return this.emailAddress;
-}
 
 Player.create = function(data, dbConnection){
-	console.log("Creating Player...");
-	console.log(data);
-	dbConnection.query("INSERT INTO mightyfrighties.players(name, email_address) VALUES('" + data.name + "', '" + data.emailAddress + "')", function(error, rows, fields){
+	dbConnection.query("INSERT IGNORE INTO mightyfrighties.players(name, email_address) VALUES('" + data.name + "', '" + data.email_address + "')", function(error, rows){
+		if(error){
+			console.log(error);
+			throw error;
+		}
+	});
+}
+
+
+Player.getById = function(id, dbConnection){
+	dbConnection.query("SELECT * FROM database.players WHERE id = " + id + " LIMIT 1", function(errors, rows){
 		if(error){
 			console.log(error);
 			throw error;
@@ -34,16 +22,34 @@ Player.create = function(data, dbConnection){
 	});
 }
 
+Player.authenticate = function(client, data, dbConnection){
+	var response = {
+		success:false,
+		player_id: -1,
+		auth_key:-1,
+		message:"Authentication Failed."
+	};
 
-Player.getById = function(id, dbConnection){
-	dbConnection.query("SELECT * FROM database.players WHERE id = " + id + " LIMIT 1", function(errors, rows, fields){
+	dbConnection.query("SELECT * FROM mightyfrighties.players WHERE email_address = '" + data.email_address + "' AND password = '" + data.password + "' LIMIT 1", function(error, rows){
 		if(error){
 			console.log(error);
 			throw error;
 		}
+		if(rows.length > 0){
+			response.auth_key = new Date().getTime();
+			response.success = true;
+			response.player_id = rows[0].player_id;
+			response.message = "Successfully authenticated!";
 
+			dbConnection.query("UPDATE mightyfrighties.players SET auth_key = '" + response.auth_key + "', last_authentication_date = NOW() WHERE player_id = " + response.player_id, function(error, rows){
+				if(error){
+					console.log(error);
+					throw error;
+				}
+			});
+		}
 
-
+		client.write(JSON.stringify(response) + "\r\n");
 	});
 }
 
