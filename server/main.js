@@ -18,8 +18,6 @@ var dbConnection = Mysql.createConnection({
 
 
 var Server = Net.createServer(function(socket){
-	//socket.client_id = parseInt(socket.remoteAddress.replace(/./g, "")) + new Date().getTime();
-	//mfServer.addClient(socket.client_id, socket);
 	socket.write("Connected to " + socket.localAddress + ":" + socket.localPort + "\r\n");
 	socket.write("From " + socket.remoteAddress + ":" + socket.remotePort + "\r\n");
 	socket.on("data", function(data){
