@@ -4,8 +4,7 @@ var MFServer = require("./classes/MFServer.js");
 var HOST = "localhost";
 var PORT = 1337;
 var mfServer = new MFServer();
-
-
+var UUID = require("node-uuid");
 
 console.log("Connecting to DB...");
 
@@ -18,6 +17,12 @@ var dbConnection = Mysql.createConnection({
 
 
 var Server = Net.createServer(function(socket){
+	socket.mfClient = {
+		is_authenticated:false,
+		player_id:-1,
+		client_id: UUID.v1()
+	};
+
 	socket.write("Connected to " + socket.localAddress + ":" + socket.localPort + "\r\n");
 	socket.write("From " + socket.remoteAddress + ":" + socket.remotePort + "\r\n");
 	socket.on("data", function(data){
@@ -38,13 +43,26 @@ var Server = Net.createServer(function(socket){
 					mfServer.createPlayer(data, dbConnection);
 					break;
 				case MFServer.ACTIONS.BROADCAST:
-					mfServer.broadcast(data);
+					if(socket.mfClient.is_authenticated){
+						mfServer.broadcast(data);
+					}
 					break;
 				case MFServer.ACTIONS.QUIT:
 					socket.end(); 
 					break;
 				case MFServer.ACTIONS.AUTHENTICATE:
 					mfServer.authenticate(socket, data, dbConnection); 
+					break;
+				case MFServer.ACTIONS.GET_CLIENT_ID:
+					mfServer.getClientId(socket); 
+					break;
+				case MFServer.ACTIONS.ATTACK:
+					if(socket.mfClient.is_authenticated){
+						mfServer.attack(data); 
+					}
+					break;
+				case MFServer.ACTIONS.CREATE_BATTLE:
+					mfServer.createBattle(data); 
 					break;
 				default:
 					break;
@@ -55,6 +73,7 @@ var Server = Net.createServer(function(socket){
 
 	socket.on("end", function(){
 		console.log("Client disconnected!");
+		mfServer.removeSocket(socket.mfClient.client_id);
 	});
 
 }).listen(PORT, HOST);

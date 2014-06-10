@@ -1,3 +1,5 @@
+var UUID = require("node-uuid");
+
 function Player(){
 }
 
@@ -22,11 +24,16 @@ Player.getById = function(id, dbConnection){
 	});
 }
 
-Player.authenticate = function(client, data, dbConnection){
+Player.attack = function(socket, recipientSocket, data, dbConnection){
+	recipientSocket.write("Attack ID: " + 12345 +  "You have been attacked! ");
+	socket.write("Attack successful!");
+}
+
+Player.authenticate = function(socket, data, dbConnection){
 	var response = {
 		success:false,
 		player_id: -1,
-		auth_key:-1,
+		auth_key:socket.mfClient.client_id,
 		message:"Authentication Failed."
 	};
 
@@ -36,7 +43,6 @@ Player.authenticate = function(client, data, dbConnection){
 			throw error;
 		}
 		if(rows.length > 0){
-			response.auth_key = new Date().getTime();
 			response.success = true;
 			response.player_id = rows[0].player_id;
 			response.message = "Successfully authenticated!";
@@ -49,7 +55,11 @@ Player.authenticate = function(client, data, dbConnection){
 			});
 		}
 
-		client.write(JSON.stringify(response) + "\r\n");
+		socket.mfClient.auth_key = response.auth_key;
+		socket.mfClient.player_id = response.player_id;
+		socket.mfClient.is_authenticated = response.success;
+
+		socket.write(JSON.stringify(response) + "\r\n");
 	});
 }
 

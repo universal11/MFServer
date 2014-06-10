@@ -4,6 +4,7 @@
 	"version":"1.0.1",
 	"true":true,
 	"dependencies":{
-		"mysql":"latest"
+		"mysql":"latest",
+		"node-uuid":"latest"
 	}
 }

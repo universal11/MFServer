@@ -2,16 +2,20 @@ var Models = require("../models");
 var Player = Models.Player;
 var Creature = Models.Creature;
 var Ability = Models.Ability;
+var UUID = require("node-uuid");
 
 function MFServer(){
-	this.clients = new Array();
+	this.sockets = new Array();
 }
 
 MFServer.ACTIONS = {
 	CREATE_PLAYER : 11111,
 	BROADCAST : 22222,
 	QUIT : 33333,
-	AUTHENTICATE : 44444
+	AUTHENTICATE : 44444,
+	GET_CLIENT_ID : 55555,
+	ATTACK: 66666,
+	CREATE_BATTLE: 77777
 }
 
 MFServer.prototype.getActionNameById = function(actionId){
@@ -24,35 +28,83 @@ MFServer.prototype.getActionNameById = function(actionId){
 			return "Quit";
 		case MFServer.ACTIONS.AUTHENTICATE:
 			return "Authenticate";
+		case MFServer.ACTIONS.GET_CLIENT_ID:
+			return "Get Client ID";
+		case MFServer.ACTIONS.ATTACK:
+			return "Attack";
+		case MFServer.ACTIONS.CREATE_BATTLE:
+			return "Create Battle";
 		default:
 			return "Unknown";
 	}
 }
 
-MFServer.prototype.addClient = function(player_id, client){
-	this.clients[player_id] = client;
+MFServer.prototype.addSocket = function(socket){
+	//this.sockets.push(socket);
+	this.sockets[socket.mfClient.client_id] = socket;
 }
 
-MFServer.prototype.getClientByPlayerId = function(player_id){
-	return this.clients[player_id];
+MFServer.prototype.removeSocket = function(socket){
+
 }
 
 MFServer.prototype.createPlayer = function(data, dbConnection){
 	Player.create(data, dbConnection);
 }
 
+MFServer.prototype.getSocketByClientId = function(client_id){
+	var socket = this.sockets[client_id];
+	if(socket === undefined){ return false; }
+	return socket;
+}
 
+/*
+MFServer.prototype.getSocketByClientId = function(client_id){
+	console.log("Retrieving Client Socket: " + client_id);
+	var numberOfSockets = this.sockets.length;
+	for(var i=0; i < numberOfSockets; i++){
+		var socket = this.sockets[i];
+		console.log("Comparing: " + client_id + " WITH " + socket.mfClient.client_id);
+		if(client_id == socket.mfClient.client_id){ 
+			return socket; 
+		}
+	}
+	return false;
+}
+*/
+MFServer.prototype.attack = function(data, dbConnection){
+		//Player.attack(data, dbConnection);
+		this.transmit(data, data.recipient_client_id);
+}
+
+MFServer.prototype.transmit = function(data, recipient_client_id){
+	var socket = this.getSocketByClientId(recipient_client_id);
+	if(socket){
+		socket.write(JSON.stringify(data) + "\r\n");
+	}
+}
 
 MFServer.createCreature = function(data, dbConnection){
 	Creature.create(data, dbConnection);
 }
 
-MFServer.prototype.getPlayer = function(){
-
+MFServer.prototype.getClientPlayerId = function(socket){
+	return socket.mfClient.player_id;
 }
 
-MFServer.prototype.authenticate = function(client, data, dbConnection){
-	Player.authenticate(client, data, dbConnection);
+MFServer.prototype.isClientAuthenticated = function(socket){
+	return socket.mfClient.is_authenticated;
+}
+
+MFServer.prototype.getClientId = function(socket){
+	return socket.write(socket.mfClient.auth_key + "\r\n");
+}
+
+MFServer.prototype.authenticate = function(socket, data, dbConnection){
+	if(!socket.mfClient.is_authenticated){
+		this.addSocket(socket);
+		Player.authenticate(socket, data, dbConnection);
+	}
 }
 
 MFServer.prototype.createBattle = function(data, dbConnection){
@@ -60,8 +112,9 @@ MFServer.prototype.createBattle = function(data, dbConnection){
 }
 
 MFServer.prototype.broadcast = function(data){
-	this.clients.forEach(function(client){
-		client.write("Received Message: " + data.message);
+	var data = data;
+	this.sockets.forEach(function(socket){
+		socket.write(JSON.stringify(data) + "\r\n");
 	});
 }
 
