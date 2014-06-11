@@ -1,4 +1,4 @@
 mightyfrighties
 ===============
 
-Mighty Frighties game
+Mighty Frighties Game Server
