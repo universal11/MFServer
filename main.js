@@ -78,7 +78,14 @@ var Server = Net.createServer(function(socket){
 						socket.end();
 						return 0;
 					}
-					mfServer.createBattle(data); 
+					mfServer.createBattle(data, dbConnection); 
+					break;
+				case MFServer.ACTIONS.CREATE_TEAM:
+					if(!socket.mfClient.is_authenticated){
+						socket.end();
+						return 0;
+					}
+					mfServer.createTeam(data, dbConnection); 
 					break;
 				default:
 					break;

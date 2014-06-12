@@ -1,5 +1,7 @@
 var Models = require("../models");
 var Player = Models.Player;
+var Battle = Models.Battle;
+var Team = Models.Team;
 var Creature = Models.Creature;
 var Ability = Models.Ability;
 var UUID = require("node-uuid");
@@ -15,7 +17,8 @@ MFServer.ACTIONS = {
 	AUTHENTICATE : 44444,
 	GET_CLIENT_ID : 55555,
 	ATTACK: 66666,
-	CREATE_BATTLE: 77777
+	CREATE_BATTLE: 77777,
+	CREATE_TEAM: 11
 }
 
 MFServer.prototype.getActionNameById = function(actionId){
@@ -34,6 +37,8 @@ MFServer.prototype.getActionNameById = function(actionId){
 			return "Attack";
 		case MFServer.ACTIONS.CREATE_BATTLE:
 			return "Create Battle";
+		case MFServer.ACTIONS.CREATE_TEAM:
+			return "Create Team";
 		default:
 			return "Unknown";
 	}
@@ -82,7 +87,7 @@ MFServer.prototype.isClientAuthenticated = function(socket){
 }
 
 MFServer.prototype.getClientId = function(socket){
-	return socket.write(socket.mfClient.auth_key + "\r\n");
+	return socket.write(socket.mfClient.client_id + "\r\n");
 }
 
 MFServer.prototype.authenticate = function(socket, data, dbConnection){
@@ -90,6 +95,10 @@ MFServer.prototype.authenticate = function(socket, data, dbConnection){
 		this.addSocket(socket);
 		Player.authenticate(socket, data, dbConnection);
 	}
+}
+
+MFServer.prototype.createTeam = function(data, db_connection){
+	Team.create(data, db_connection);
 }
 
 MFServer.prototype.createBattle = function(data, dbConnection){

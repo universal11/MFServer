@@ -31,7 +31,7 @@ Player.authenticate = function(socket, data, dbConnection){
 	var response = {
 		success:false,
 		player_id: -1,
-		auth_key:socket.mfClient.client_id,
+		client_id:socket.mfClient.client_id,
 		message:"Authentication Failed."
 	};
 
@@ -45,7 +45,7 @@ Player.authenticate = function(socket, data, dbConnection){
 			response.player_id = rows[0].player_id;
 			response.message = "Successfully authenticated!";
 
-			dbConnection.query("UPDATE mightyfrighties.players SET auth_key = '" + response.auth_key + "', last_authentication_date = NOW() WHERE player_id = " + response.player_id, function(error, rows){
+			dbConnection.query("UPDATE mightyfrighties.players SET last_client_id = '" + response.client_id + "', last_authentication_date = NOW() WHERE player_id = " + response.player_id, function(error, rows){
 				if(error){
 					console.log(error);
 					throw error;
@@ -53,7 +53,7 @@ Player.authenticate = function(socket, data, dbConnection){
 			});
 		}
 
-		socket.mfClient.auth_key = response.auth_key;
+		socket.mfClient.client_id = response.client_id;
 		socket.mfClient.player_id = response.player_id;
 		socket.mfClient.is_authenticated = response.success;
 
