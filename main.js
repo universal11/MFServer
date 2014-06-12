@@ -20,7 +20,8 @@ var Server = Net.createServer(function(socket){
 	socket.mfClient = {
 		is_authenticated:false,
 		player_id:-1,
-		client_id: UUID.v1()
+		client_id: UUID.v1(),
+		current_battle_id: -1
 	};
 
 	socket.write("Connected to " + socket.localAddress + ":" + socket.localPort + "\r\n");
@@ -71,14 +72,19 @@ var Server = Net.createServer(function(socket){
 						socket.end();
 						return 0;
 					}
-					mfServer.attack(data); 
+
+					if(socket.mfClient.current_battle_id != -1){
+						mfServer.attack(data, dbConnection); 
+					}
 					break;
 				case MFServer.ACTIONS.CREATE_BATTLE:
 					if(!socket.mfClient.is_authenticated){
 						socket.end();
 						return 0;
 					}
-					mfServer.createBattle(data, dbConnection); 
+					if(socket.mfClient.current_battle_id == -1){
+						mfServer.createBattle(data, dbConnection, mfServer.getSockets()); 
+					}
 					break;
 				case MFServer.ACTIONS.CREATE_TEAM:
 					if(!socket.mfClient.is_authenticated){

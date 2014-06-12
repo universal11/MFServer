@@ -4,3 +4,4 @@ module.exports.Player = require("./Player.js");
 module.exports.Battle = require("./Battle.js");
 module.exports.Team = require("./Team.js");
 module.exports.TeamPlayer = require("./TeamPlayer.js");
+module.exports.Attack = require("./Attack.js");

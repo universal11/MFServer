@@ -4,6 +4,7 @@ var Battle = Models.Battle;
 var Team = Models.Team;
 var Creature = Models.Creature;
 var Ability = Models.Ability;
+var Attack = Models.Attack;
 var UUID = require("node-uuid");
 
 function MFServer(){
@@ -44,6 +45,10 @@ MFServer.prototype.getActionNameById = function(actionId){
 	}
 }
 
+MFServer.prototype.getSockets = function(){
+	return this.sockets;
+}
+
 MFServer.prototype.addSocket = function(socket){
 	this.sockets[socket.mfClient.client_id] = socket;
 }
@@ -62,9 +67,10 @@ MFServer.prototype.getSocketByClientId = function(client_id){
 	return socket;
 }
 
-MFServer.prototype.attack = function(data, dbConnection){
-		Player.attack(data, dbConnection);
-		this.transmit(data, data.recipient_client_id);
+MFServer.prototype.attack = function(data, db_connection){
+		//Player.attack(data, dbConnection);
+		Attack.create(data, db_connection);
+		//this.transmit(data, data.recipient_client_id);
 }
 
 MFServer.prototype.transmit = function(data, recipient_client_id){
@@ -101,8 +107,8 @@ MFServer.prototype.createTeam = function(data, db_connection){
 	Team.create(data, db_connection);
 }
 
-MFServer.prototype.createBattle = function(data, dbConnection){
-	Battle.create(data, dbConnection);
+MFServer.prototype.createBattle = function(data, dbConnection, sockets){
+	Battle.create(data, dbConnection, sockets);
 }
 
 MFServer.prototype.broadcast = function(data){
