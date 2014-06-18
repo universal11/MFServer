@@ -93,6 +93,13 @@ var Server = Net.createServer(function(socket){
 					}
 					mfServer.createTeam(data, dbConnection); 
 					break;
+				case MFServer.ACTIONS.GET_PLAYER_CREATURES:
+					if(!socket.mfClient.is_authenticated){
+						socket.end();
+						return 0;
+					}
+					mfServer.getPlayerCreatures(data, dbConnection, socket); 
+					break;
 				default:
 					break;
 			}
